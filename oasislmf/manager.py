@@ -829,7 +829,7 @@ class OasisManager(object):
                 with io.open(os.path.join(model_run_fp, 'ri_layers.json'), 'r', encoding='utf-8') as f:
                     ri_layers = len(json.load(f))
             except IOError:
-                with io.open(os.path.join(model_run_fp, 'input', 'ri_layers.json'), 'r', encoding='utf-8') as f:
+                with io.open(os.path.join(oasis_fp, 'ri_layers.json'), 'r', encoding='utf-8') as f:
                     ri_layers = len(json.load(f))
 
         params = {
