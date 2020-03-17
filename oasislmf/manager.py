@@ -822,7 +822,7 @@ class OasisManager(object):
     ):
         model_run_fp = as_path(model_run_fp, 'Model run directory', is_dir=True, preexists=False)
 
-        ri = any(re.match(r'RI_\d+$', fn) for fn in os.listdir(os.path.dirname(oasis_fp)) + os.listdir(oasis_fp)),
+        ri = any(re.match(r'RI_\d+$', fn) for fn in os.listdir(os.path.dirname(oasis_fp)) + os.listdir(oasis_fp))
         ri_layers = 0
         if ri:
             try:
@@ -1077,7 +1077,10 @@ class OasisManager(object):
             ktools_alloc_rule_il=params['ktools_alloc_rule_il'],
             ktools_error_guard=params['ktools_error_guard'],
             ktools_debug=params['ktools_debug'],
-            ri=params['ri'],
+            gul_output=params['analysis_settings']['gul_output'],
+            il_output=params['analysis_settings']['il_output'],
+            ri_output=params['analysis_settings']['ri_output'],
+            ri_layers=params['ri_layers'],
             remove_working_files=params['remove_working_files'],
         )
         return params['model_run_fp']
