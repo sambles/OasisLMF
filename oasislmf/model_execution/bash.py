@@ -820,7 +820,13 @@ def genbash_params(
     process_number=None,
     fifo_queue_dir=None,
     remove_working_files=True,
+    work_dir='work/',
+    work_kat_dir=None,
+    work_full_correlation_dir=None,
+    work_full_correlation_kat_dir=None,
 ):
+    work_dir = work_dir or 'work/'
+
     if max_process_id == -1:
         max_process_id = multiprocessing.cpu_count()
 
@@ -874,6 +880,10 @@ def genbash_params(
         'process_counter': Counter(),
         'fifo_queue_dir': fifo_queue_dir,
         'remove_working_files': remove_working_files,
+        'work_dir': work_dir,
+        'work_kat_dir': work_kat_dir or os.path.join(work_dir, 'kat') + '/',
+        'work_full_correlation_dir': work_full_correlation_dir or os.path.join(work_dir, 'full_correlation') + '/',
+        'work_full_correlation_kat_dir': work_full_correlation_kat_dir or os.path.join(work_dir, 'full_correlation', 'kat') + '/',
     }
 
 
@@ -1414,10 +1424,10 @@ def genbash_outputs(
     il_output=False,
     ri_output=False,
     fifo_queue_dir="",
+    work_dir='work/',
     work_full_correlation_dir='work/full_correlation/',
     output_dir='output/',
     output_full_correlation_dir='output/full_correlation/',
-    fifo_tmp_dir='',
     filename='run_kools.sh',
     _get_getmodel_cmd=None,
     process_counter=None,
@@ -1442,7 +1452,7 @@ def genbash_outputs(
         )
 
     if full_correlation:
-        work_sub_dir = re.sub('^work/', '', work_full_correlation_dir)
+        work_sub_dir = re.sub(f'^{work_dir}', '', work_full_correlation_dir)
         if ri_output:
             do_post_wait_processing(
                 RUNTYPE_REINSURANCE_LOSS, analysis_settings, filename,
@@ -1463,8 +1473,8 @@ def genbash_outputs(
     do_lwaits(filename, process_counter)  # waits for leccalc
 
     if remove_working_files:
-        print_command(filename, 'rm -R -f work/*')
-        if fifo_tmp_dir:
+        print_command(filename, 'rm -R -f {}*'.format(work_dir))
+        if fifo_queue_dir != 'fifo/':
             print_command(
                 filename, 'rm -R -f {}'.format(re.sub('fifo/$', '', fifo_queue_dir))
             )
