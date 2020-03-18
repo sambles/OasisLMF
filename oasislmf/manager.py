@@ -520,6 +520,7 @@ class OasisManager(object):
         multiprocessing=True,
         oasis_files_prefixes=None,
         group_id_cols=None,
+        **kwargs,
     ):
         lookup_config_fp = as_path(lookup_config_fp, 'Lookup config JSON file path', preexists=False)
 
@@ -573,7 +574,8 @@ class OasisManager(object):
                 ({int(k): v for k, v in
                   get_json(src_fp=fm_aggregation_profile_fp).items()} if fm_aggregation_profile_fp else {}) or
                 self.fm_aggregation_profile
-            )
+            ),
+            **kwargs
         })
 
         return res
@@ -806,6 +808,8 @@ class OasisManager(object):
         model_custom_gulcalc=None,
         ktools_num_processes=None,
         ktools_fifo_relative=None,
+        ktools_fifo_queue_dir=None,
+        ktools_work_dir=None,
         ktools_alloc_rule_gul=None,
         ktools_alloc_rule_il=None,
         ktools_alloc_rule_ri=None,
@@ -814,6 +818,7 @@ class OasisManager(object):
         user_data_dir=None,
         remove_working_files=True,
         process_number=None,
+        **kwargs,
     ):
         model_run_fp = as_path(model_run_fp, 'Model run directory', is_dir=True, preexists=False)
 
@@ -824,7 +829,7 @@ class OasisManager(object):
                 with io.open(os.path.join(model_run_fp, 'ri_layers.json'), 'r', encoding='utf-8') as f:
                     ri_layers = len(json.load(f))
             except IOError:
-                with io.open(os.path.join(model_run_fp, 'input', 'ri_layers.json'), 'r', encoding='utf-8') as f:
+                with io.open(os.path.join(oasis_fp, 'ri_layers.json'), 'r', encoding='utf-8') as f:
                     ri_layers = len(json.load(f))
 
         params = {
@@ -859,11 +864,14 @@ class OasisManager(object):
                 fallback=self.ktools_alloc_rule_ri
             ),
             'ktools_fifo_relative': ktools_fifo_relative or self.ktools_fifo_relative,
+            'ktools_fifo_queue_dir': ktools_fifo_queue_dir,
+            'ktools_work_dir': ktools_work_dir,
             'model_custom_gulcalc': model_custom_gulcalc,
             'ktools_error_guard': ktools_error_guard if isinstance(ktools_error_guard, bool) else self.ktools_error_guard,
             'ktools_debug': ktools_debug if isinstance(ktools_debug, bool) else self.ktools_debug,
             'remove_working_files': remove_working_files,
             'process_number': process_number,
+            **kwargs
         }
 
         return params
@@ -1090,6 +1098,8 @@ class OasisManager(object):
         ktools_alloc_rule_il=None,
         ktools_error_guard=None,
         ktools_debug=None,
+        ktools_fifo_queue_dir=None,
+        ktools_work_dir=None,
         ri_layers=0,
         process_number=None,
         remove_working_files=True,
@@ -1111,6 +1121,8 @@ class OasisManager(object):
                     filename=script_fp,
                     _get_getmodel_cmd=model_custom_gulcalc,
                     remove_working_files=remove_working_files,
+                    fifo_queue_dir=ktools_fifo_queue_dir,
+                    work_dir=ktools_work_dir,
                 )
                 return model_runner_module.run_analysis(**params)
             except CalledProcessError as e:
@@ -1150,6 +1162,8 @@ class OasisManager(object):
         ktools_alloc_rule_il=None,
         ktools_error_guard=None,
         ktools_debug=None,
+        ktools_work_dir=None,
+        ktools_fifo_queue_dir=None,
         ri_layers=0,
         process_number=None,
         remove_working_files=True,
@@ -1171,6 +1185,8 @@ class OasisManager(object):
                     filename=script_fp,
                     _get_getmodel_cmd=model_custom_gulcalc,
                     remove_working_files=remove_working_files,
+                    fifo_queue_dir=ktools_fifo_queue_dir,
+                    work_dir=ktools_work_dir,
                 )
                 return model_runner_module.run_outputs(**params)
             except CalledProcessError as e:
