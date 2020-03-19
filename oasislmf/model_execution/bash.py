@@ -24,6 +24,13 @@ WAIT_PROCESSING_SWITCHES = {
 }
 
 
+def _ensure_trailing_slash(p):
+    if p:
+        return p if p.endswith('/') else p + '/'
+    else:
+        return p
+
+
 def process_range(max_process_id, process_number=None):
     """
     Creates an iterable for all the process ids, if process number is set
@@ -824,8 +831,16 @@ def genbash_params(
     work_kat_dir=None,
     work_full_correlation_dir=None,
     work_full_correlation_kat_dir=None,
+    output_dir='output/',
+    output_full_correlation_dir='output/full_correlation/',
 ):
-    work_dir = work_dir or 'work/'
+    work_dir = _ensure_trailing_slash(work_dir or 'work/')
+    work_kat_dir = _ensure_trailing_slash(work_kat_dir or os.path.join(work_dir, 'kat') + '/')
+    work_full_correlation_dir = _ensure_trailing_slash(work_full_correlation_dir or os.path.join(work_dir, 'full_correlation') + '/')
+    work_full_correlation_kat_dir = _ensure_trailing_slash(work_full_correlation_kat_dir or os.path.join(work_dir, 'full_correlation', 'kat') + '/')
+
+    output_dir = _ensure_trailing_slash(output_dir)
+    output_full_correlation_dir = _ensure_trailing_slash(output_full_correlation_dir or os.path.join(output_dir, 'full_correlation'))
 
     if max_process_id == -1:
         max_process_id = multiprocessing.cpu_count()
@@ -878,12 +893,14 @@ def genbash_params(
         'custom_args': custom_args,
         'process_number': process_number,
         'process_counter': Counter(),
-        'fifo_queue_dir': fifo_queue_dir,
+        'fifo_queue_dir': _ensure_trailing_slash(fifo_queue_dir),
         'remove_working_files': remove_working_files,
         'work_dir': work_dir,
-        'work_kat_dir': work_kat_dir or os.path.join(work_dir, 'kat') + '/',
-        'work_full_correlation_dir': work_full_correlation_dir or os.path.join(work_dir, 'full_correlation') + '/',
-        'work_full_correlation_kat_dir': work_full_correlation_kat_dir or os.path.join(work_dir, 'full_correlation', 'kat') + '/',
+        'work_kat_dir': work_kat_dir,
+        'work_full_correlation_dir': work_full_correlation_dir,
+        'work_full_correlation_kat_dir': work_full_correlation_kat_dir,
+        'output_dir': output_dir,
+        'output_full_correlation_dir': output_full_correlation_dir,
     }
 
 
@@ -988,7 +1005,7 @@ def genbash_analysis(
 
     print_command(filename, '# --- Setup run dirs ---')
     print_command(filename, '')
-    print_command(filename, "find output/* ! -name '*summary-info*' -type f -exec rm -f {} +")
+    print_command(filename, "find {}* ! -name '*summary-info*' -type f -exec rm -f {{}} +".format(output_dir))
     if full_correlation:
         print_command(filename, 'mkdir {}'.format(output_full_correlation_dir))
     print_command(filename, '')
