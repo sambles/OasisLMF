@@ -10,4 +10,4 @@ rm -R -f log/*
 
 
 rm -R -f work/*
-rm -R -f /tmp/%FIFO_DIR%/
+rm -R -f /tmp/%FIFO_DIR%/fifo/*

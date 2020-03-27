@@ -71,4 +71,4 @@ leccalc -r -Kfull_correlation/il_S1_summaryleccalc -F output/full_correlation/il
 wait $lpid1 $lpid2
 
 rm -R -f work/*
-rm -R -f /tmp/%FIFO_DIR%/
+rm -R -f /tmp/%FIFO_DIR%/fifo/*

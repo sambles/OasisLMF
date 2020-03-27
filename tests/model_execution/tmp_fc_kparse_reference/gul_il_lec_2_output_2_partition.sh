@@ -331,4 +331,4 @@ leccalc -r -Kfull_correlation/gul_S2_summaryleccalc -F output/full_correlation/g
 wait $lpid1 $lpid2 $lpid3 $lpid4 $lpid5 $lpid6 $lpid7 $lpid8 $lpid9 $lpid10 $lpid11 $lpid12 $lpid13 $lpid14 $lpid15 $lpid16
 
 rm -R -f work/*
-rm -R -f /tmp/%FIFO_DIR%/
+rm -R -f /tmp/%FIFO_DIR%/fifo/*

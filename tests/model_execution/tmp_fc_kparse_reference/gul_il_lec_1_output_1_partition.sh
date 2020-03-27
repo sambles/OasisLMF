@@ -159,4 +159,4 @@ leccalc -r -Kfull_correlation/gul_S1_summaryleccalc -F output/full_correlation/g
 wait $lpid1 $lpid2 $lpid3 $lpid4 $lpid5 $lpid6 $lpid7 $lpid8
 
 rm -R -f work/*
-rm -R -f /tmp/%FIFO_DIR%/
+rm -R -f /tmp/%FIFO_DIR%/fifo/*

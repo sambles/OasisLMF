@@ -94,4 +94,4 @@ aalcalc -Kfull_correlation/gul_S1_summaryaalcalc > output/full_correlation/gul_S
 wait $lpid1 $lpid2
 
 rm -R -f work/*
-rm -R -f /tmp/%FIFO_DIR%/
+rm -R -f /tmp/%FIFO_DIR%/fifo/*

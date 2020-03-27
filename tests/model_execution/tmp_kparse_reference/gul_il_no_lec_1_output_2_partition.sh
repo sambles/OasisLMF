@@ -115,4 +115,4 @@ aalcalc -Kgul_S1_summaryaalcalc > output/gul_S1_aalcalc.csv & lpid2=$!
 wait $lpid1 $lpid2
 
 rm -R -f work/*
-rm -R -f /tmp/%FIFO_DIR%/
+rm -R -f /tmp/%FIFO_DIR%/fifo/*

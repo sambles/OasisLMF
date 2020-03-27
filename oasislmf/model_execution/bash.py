@@ -1490,10 +1490,5 @@ def genbash_outputs(
     do_lwaits(filename, process_counter)  # waits for leccalc
 
     if remove_working_files:
-        print_command(filename, 'rm -R -f {}*'.format(work_dir))
-        if fifo_queue_dir != 'fifo/':
-            print_command(
-                filename, 'rm -R -f {}'.format(re.sub('fifo/$', '', fifo_queue_dir))
-            )
-        else:
-            print_command(filename, 'rm -R -f fifo/*')
+        print_command(filename, 'rm -R -f {}'.format(os.path.join(work_dir, '*')))
+        print_command(filename, 'rm -R -f {}'.format(os.path.join(fifo_queue_dir, '*')))
