@@ -84,6 +84,9 @@ def run_analysis(
     _get_getmodel_cmd=None,
     **extra
 ):
+
+
+
     # If `given_gulcalc_cmd` is set then always run as a complex model
     # and raise an exception when not found in PATH
     if _get_getmodel_cmd:
@@ -91,36 +94,6 @@ def run_analysis(
             raise OasisException(
                 'Run error: Custom Gulcalc command "{}" explicitly set but not found in path.'.format(_get_getmodel_cmd)
             )
-
-        def _custom_get_getmodel_cmd(
-            number_of_samples,
-            gul_threshold,
-            use_random_number_file,
-            coverage_output,
-            item_output,
-            process_id,
-            max_process_id,
-            gul_alloc_rule,
-            stderr_guard,
-            **kwargs
-        ):
-
-            cmd = "{} -e {} {} -a {} -p {}".format(
-                custom_gulcalc_cmd,
-                process_id,
-                max_process_id,
-                os.path.abspath("analysis_settings.json"),
-                "input")
-            if coverage_output != '' and not gul_alloc_rule:
-                cmd = '{} -c {}'.format(cmd, coverage_output)
-            if item_output != '':
-                cmd = '{} -i {}'.format(cmd, item_output)
-            if stderr_guard:
-                cmd = '({}) 2>> log/gul_stderror.err'.format(cmd)
-
-            return cmd
-
-        custom_gulcalc_cmd = _custom_get_getmodel_cmd
     # when not set then fallback to previous behaviour:
     # Check if a custom binary `<supplier>_<model>_gulcalc` exists in PATH
     else:
@@ -128,8 +101,42 @@ def run_analysis(
             analysis_settings.get('module_supplier_id'),
             analysis_settings.get('model_version_id'))
         if shutil.which(inferred_gulcalc_cmd):
-            custom_gulcalc_cmd = inferred_gulcalc_cmd
+            _get_getmodel_cmd = inferred_gulcalc_cmd
 
+    # Complex Model command func
+    def _custom_get_getmodel_cmd(
+        number_of_samples,
+        gul_threshold,
+        use_random_number_file,
+        coverage_output,
+        item_output,
+        process_id,
+        max_process_id,
+        gul_alloc_rule,
+        stderr_guard,
+        **kwargs
+    ):
+
+        cmd = "{} -e {} {} -a {} -p {}".format(
+            custom_gulcalc_cmd,
+            process_id,
+            max_process_id,
+            os.path.abspath("analysis_settings.json"),
+            "input")
+        if coverage_output != '' and not gul_alloc_rule:
+            cmd = '{} -c {}'.format(cmd, coverage_output)
+        if item_output != '':
+            cmd = '{} -i {}'.format(cmd, item_output)
+        if stderr_guard:
+            cmd = '({}) 2>> log/gul_stderror.err'.format(cmd)
+
+        return cmd
+
+    if _get_getmodel_cmd:
+        custom_gulcalc_cmd = _get_getmodel_cmd
+        _get_getmodel_cmd = _custom_get_getmodel_cmd
+
+    
     with genbash_wrapper(filename, bash_trace, stderr_guard):
         fifo_queue_dir = genbash_analysis(
             max_process_id=max_process_id,

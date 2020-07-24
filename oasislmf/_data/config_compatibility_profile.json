@@ -14,6 +14,11 @@
         "deleted": false,
         "updated_to": "lookup_package_dir"
     },
+    "lookup_module_path":{
+        "from_ver": "1.6.0",
+        "deleted": false,
+        "updated_to": "lookup_package_dir"
+    },
     "keys_data_path":{
         "from_ver": "1.4.1",
         "deleted": false,
