@@ -14,23 +14,7 @@ from ..utils.defaults import (
 )
 
 
-@oasis_log()
-def run(
-    analysis_settings,
-    number_of_processes=-1,
-    process_number=None,
-    num_reinsurance_iterations=0,
-    set_alloc_rule_gul=KTOOLS_ALLOC_GUL_DEFAULT,
-    set_alloc_rule_il=KTOOLS_ALLOC_IL_DEFAULT,
-    set_alloc_rule_ri=KTOOLS_ALLOC_RI_DEFAULT,
-    fifo_tmp_dir=True,
-    stderr_guard=True,
-    run_debug=False,
-    custom_gulcalc_cmd=None,
-    filename='run_ktools.sh',
-    remove_working_files=True,
-):
-
+def get_complex_model_cmd(analysis_settings, custom_gulcalc_cmd=None):
     # If `given_gulcalc_cmd` is set then always run as a complex model
     # and raise an exception when not found in PATH
     if custom_gulcalc_cmd:
@@ -47,8 +31,10 @@ def run(
         if shutil.which(inferred_gulcalc_cmd):
             custom_gulcalc_cmd = inferred_gulcalc_cmd
 
-    custom_get_getmodel_cmd = None
-    if custom_gulcalc_cmd:
+    if not custom_gulcalc_cmd:
+        return None
+
+    else:
         def custom_get_getmodel_cmd(
             number_of_samples,
             gul_threshold,
@@ -76,6 +62,25 @@ def run(
                 cmd = '({}) 2>> log/gul_stderror.err'.format(cmd)
 
             return cmd
+        return custom_get_getmodel_cmd
+
+
+@oasis_log()
+def run(
+    analysis_settings,
+    number_of_processes=-1,
+    process_number=None,
+    num_reinsurance_iterations=0,
+    set_alloc_rule_gul=KTOOLS_ALLOC_GUL_DEFAULT,
+    set_alloc_rule_il=KTOOLS_ALLOC_IL_DEFAULT,
+    set_alloc_rule_ri=KTOOLS_ALLOC_RI_DEFAULT,
+    fifo_tmp_dir=True,
+    stderr_guard=True,
+    run_debug=False,
+    custom_gulcalc_cmd=None,
+    filename='run_ktools.sh',
+    remove_working_files=True,
+):
 
 
     params = genbash_params(
@@ -90,7 +95,7 @@ def run(
         stderr_guard=stderr_guard,
         bash_trace=run_debug,
         filename=filename,
-        _get_getmodel_cmd=custom_get_getmodel_cmd,
+        _get_getmodel_cmd=get_complex_model_cmd(get_complex_model_cmd, custom_gulcalc_cmd),
         remove_working_files=remove_working_files,
     )
     params['fifo_queue_dir'], params['analysis_bash_trace'] = run_analysis(**params)

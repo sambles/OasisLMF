@@ -1108,6 +1108,11 @@ class OasisManager(object):
         with setcwd(model_run_fp):
             try:
                 model_runner_module = self.get_model_runner_module(model_package_fp)
+                model_gul_command = model_runner_module.get_complex_model_cmd(
+                    analysis_settings, 
+                    model_custom_gulcalc 
+                )
+
                 params = model_runner_module.genbash_params(
                     analysis_settings=analysis_settings,
                     max_process_id=ktools_num_processes,
@@ -1119,7 +1124,7 @@ class OasisManager(object):
                     stderr_guard=ktools_error_guard,
                     bash_trace=ktools_debug,
                     filename=script_fp,
-                    _get_getmodel_cmd=model_custom_gulcalc,
+                    _get_getmodel_cmd=model_gul_command,
                     remove_working_files=remove_working_files,
                     fifo_queue_dir=ktools_fifo_queue_dir,
                     work_dir=ktools_work_dir,
