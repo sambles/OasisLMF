@@ -2,6 +2,7 @@ import argparse
 import logging
 
 from .getmodel import manager, logger
+import memory_profiler
 
 
 parser = argparse.ArgumentParser()

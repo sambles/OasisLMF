@@ -16,6 +16,7 @@ from numba.typed import Dict
 
 from .common import areaperil_int, oasis_float, Index_type
 from .footprint import Footprint
+from memory_profiler import profile
 
 logger = logging.getLogger(__name__)
 
@@ -267,6 +268,7 @@ def create_vulns_id(vuln_dict):
     return vulns_id
 
 
+@profile
 def get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type=set()):
     """
     Loads the vulnerabilities from the file.
@@ -509,6 +511,7 @@ def convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns):
         areaperil_to_vulns[i] = vuln_dict[areaperil_to_vulns[i]]
 
 
+@profile
 def run(run_dir, file_in, file_out, ignore_file_type):
     """
     Runs the main process of the getmodel process.
@@ -521,7 +524,12 @@ def run(run_dir, file_in, file_out, ignore_file_type):
 
     Returns: None
     """
+    from screw_driver import EmissaryConnection
+    import psutil
+
     ignore_file_type = set(ignore_file_type)
+    emissary_connection = EmissaryConnection(key="get-model")
+
     with ExitStack() as stack:
         if file_in is None:
             streams_in = sys.stdin.buffer
@@ -540,15 +548,28 @@ def run(run_dir, file_in, file_out, ignore_file_type):
         event_ids = np.ndarray(1, buffer=event_id_mv, dtype='i4')
 
         logger.debug('init items')
+
+        memory_message = "before get_items " + str(psutil.virtual_memory())
+        emissary_connection.send_message(message=memory_message)
+
         vuln_dict, areaperil_to_vulns_idx_dict, areaperil_to_vulns_idx_array, areaperil_to_vulns = get_items(input_path, ignore_file_type)
 
+        memory_message = "after get_items " + str(psutil.virtual_memory())
+        emissary_connection.send_message(message=memory_message)
         logger.debug('init footprint')
         footprint_obj = stack.enter_context(Footprint.load(static_path, ignore_file_type))
         num_intensity_bins = footprint_obj.num_intensity_bins
 
         logger.debug('init vulnerability')
 
+        memory_message = "before get_vulns " + str(psutil.virtual_memory())
+        emissary_connection.send_message(message=memory_message)
+
         vuln_array, vulns_id, num_damage_bins = get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type)
+
+        memory_message = "after get_vulns " + str(psutil.virtual_memory())
+        emissary_connection.send_message(message=memory_message)
+
         convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns)
         logger.debug('init mean_damage_bins')
         mean_damage_bins = get_mean_damage_bins(static_path, ignore_file_type)

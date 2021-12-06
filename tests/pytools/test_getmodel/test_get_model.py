@@ -1,6 +1,6 @@
 from unittest import main, TestCase
 
-from oasislmf.pytools.getmodel.manager import get_items, get_vulns, Footprint
+from oasislmf.pytools.getmodel.manager import get_items, get_vulns, Footprint, run
 
 import numpy as np
 import numba as nb
@@ -38,7 +38,7 @@ class GetModelTests(TestCase):
     parquet => vulnerability only
     """
     def test_init(self):
-        pass
+        run(run_dir="./input/", file_in="./", file_out=None, ignore_file_type=[])
 
     # def test_load_parquet(self):
     #     vulns_dict = get_items(input_path="./")[0]
@@ -81,17 +81,17 @@ class GetModelTests(TestCase):
     #                                file_type="parquet")
 
 
-    # def test_get_vulns(self):
-    #     vulns_dict = get_items(input_path="./")[0]
-    #     first_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50,
-    #                               ignore_file_type={"parquet"})
-    #     vulnerability_array = first_outcome[0]
-    #
-    #     second_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50)
-    #     second_vulnerability_array = second_outcome[0]
-    #     print()
-    #     print(second_vulnerability_array)
-    #     print(vulnerability_array)
+    def test_get_vulns(self):
+        vulns_dict = get_items(input_path="./")[0]
+        first_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50,
+                                  ignore_file_type={"parquet"})
+        vulnerability_array = first_outcome[0]
+
+        second_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50)
+        second_vulnerability_array = second_outcome[0]
+        print()
+        print(second_vulnerability_array)
+        print(vulnerability_array)
 
 
 if __name__ == "__main__":
