@@ -549,12 +549,12 @@ def run(run_dir, file_in, file_out, ignore_file_type):
 
         logger.debug('init items')
 
-        memory_message = "before get_items " + str(psutil.virtual_memory())
+        memory_message = "before get_items " + str(psutil.virtual_memory().used)
         emissary_connection.send_message(message=memory_message)
 
         vuln_dict, areaperil_to_vulns_idx_dict, areaperil_to_vulns_idx_array, areaperil_to_vulns = get_items(input_path, ignore_file_type)
 
-        memory_message = "after get_items " + str(psutil.virtual_memory())
+        memory_message = "after get_items " + str(psutil.virtual_memory().used)
         emissary_connection.send_message(message=memory_message)
         logger.debug('init footprint')
         footprint_obj = stack.enter_context(Footprint.load(static_path, ignore_file_type))
@@ -562,12 +562,12 @@ def run(run_dir, file_in, file_out, ignore_file_type):
 
         logger.debug('init vulnerability')
 
-        memory_message = "before get_vulns " + str(psutil.virtual_memory())
+        memory_message = "before get_vulns " + str(psutil.virtual_memory().used)
         emissary_connection.send_message(message=memory_message)
 
         vuln_array, vulns_id, num_damage_bins = get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type)
 
-        memory_message = "after get_vulns " + str(psutil.virtual_memory())
+        memory_message = "after get_vulns " + str(psutil.virtual_memory().used)
         emissary_connection.send_message(message=memory_message)
 
         convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns)
