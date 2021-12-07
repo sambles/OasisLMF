@@ -109,8 +109,8 @@ def load_items(items):
              areaperil ID to vulnerability index array, areaperil ID to vulnerability array
     """
     areaperil_to_vulns_size = 0
-    areaperil_dict = Dict()
-    vuln_dict = Dict()
+    areaperil_dict = dict()
+    vuln_dict = dict()
     vuln_idx = 0
     for i in range(items.shape[0]):
         item = items[i]
@@ -122,7 +122,7 @@ def load_items(items):
 
         # insert an area dictionary into areaperil_dict under the key of areaperil ID
         if item['areaperil_id'] not in areaperil_dict:
-            area_vuln = Dict()
+            area_vuln = dict()
             area_vuln[item['vulnerability_id']] = 0
             areaperil_dict[item['areaperil_id']] = area_vuln
             areaperil_to_vulns_size += 1
@@ -131,7 +131,7 @@ def load_items(items):
                 areaperil_to_vulns_size += 1
                 areaperil_dict[item['areaperil_id']][item['vulnerability_id']] = 0
 
-    areaperil_to_vulns_idx_dict = Dict()
+    areaperil_to_vulns_idx_dict = dict()
     areaperil_to_vulns_idx_array = np.empty(len(areaperil_dict), dtype = Index_type)
     areaperil_to_vulns = np.empty(areaperil_to_vulns_size, dtype = np.int32)
 
