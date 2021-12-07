@@ -1,6 +1,6 @@
 from unittest import main, TestCase
 
-from oasislmf.pytools.getmodel.manager import get_items, get_vulns, Footprint, run
+from oasislmf.pytools.getmodel.manager import get_items, get_vulns, Footprint, run, load_vulns_bin
 
 import numpy as np
 import numba as nb
@@ -80,18 +80,29 @@ class GetModelTests(TestCase):
     #     second_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50,
     #                                file_type="parquet")
 
-
-    def test_get_vulns(self):
-        vulns_dict = get_items(input_path="./")[0]
-        first_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50,
-                                  ignore_file_type={"parquet"})
-        vulnerability_array = first_outcome[0]
-
-        second_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50)
-        second_vulnerability_array = second_outcome[0]
-        print()
-        print(second_vulnerability_array)
-        print(vulnerability_array)
+    # def test_get_vulns(self):
+    #     vulns_dict = get_items(input_path="./")[0]
+    #     first_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50,
+    #                               ignore_file_type={"parquet"})
+    #     vulnerability_array = first_outcome[0]
+    #
+    #     second_outcome = get_vulns(static_path="./static/", vuln_dict=vulns_dict, num_intensity_bins=50)
+    #     second_vulnerability_array = second_outcome[0]
+    #     print()
+    #     print(second_vulnerability_array)
+    #     print(vulnerability_array)
+    #
+    # def test_load_vulns_bin(self):
+    #     from oasislmf.pytools.getmodel.manager import Vulnerability
+    #     vulns_dict = get_items(input_path="./")[0]
+    #
+    #     with open("./vulnerability.bin", 'rb') as f:
+    #         header = np.frombuffer(f.read(8), 'i4')
+    #         num_damage_bins = header[0]
+    #         vulns_bin = np.memmap("./vulnerability.bin", dtype=Vulnerability, offset=4, mode='r')
+    #
+    #     outcome = load_vulns_bin(vulns_bin, vulns_dict, num_damage_bins, 50)
+    #     print(len(vulns_dict))
 
 
 if __name__ == "__main__":

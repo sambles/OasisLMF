@@ -76,13 +76,13 @@ VulnerabilityRow = nb.from_dtype(np.dtype([('intensity_bin_id', np.int32),
 vuln_offset = 4
 
 
-@nb.jit(cache=True)
+# @nb.jit(cache=True)
 def load_areaperil_id_u4(int32_mv, cursor, areaperil_id):
     int32_mv[cursor] = areaperil_id.view('i4')
     return cursor + 1
 
 
-@nb.jit(cache=True)
+# @nb.jit(cache=True)
 def load_areaperil_id_u8(int32_mv, cursor, areaperil_id):
     int32_mv[cursor: cursor+1] = areaperil_id.view('i4')
     return cursor + 2
@@ -96,7 +96,7 @@ else:
     raise Exception(f"AREAPERIL_TYPE {areaperil_int} is not implemented chose u4 or u8")
 
 
-@nb.jit(cache=True)
+# @nb.jit(cache=True)
 def load_items(items):
     """
     Processes the Items loaded from the file extracting meta data around the vulnerability data.
@@ -176,7 +176,7 @@ def get_items(input_path, ignore_file_type=set()):
     return load_items(items)
 
 
-@nb.njit(cache=True)
+# @nb.njit(cache=True)
 def load_vulns_bin_idx(vulns_bin, vulns_idx_bin, vuln_dict,
                                  num_damage_bins, num_intensity_bins):
     """
@@ -218,20 +218,9 @@ def load_vulns_bin(vulns_bin, vuln_dict, num_damage_bins, num_intensity_bins):
 
     Returns: (List[List[List[floats]]]) vulnerability data grouped by intensity bin and damage bin
     """
-    from screw_driver import EmissaryConnection
-    import psutil
-
-    process = psutil.Process(os.getpid())
-    emissary_connection = EmissaryConnection(key="get-model")
-    memory_message = "before vuln_array " + str(process.memory_info().rss) + " " + str(
-        process.memory_info().shared)
-    emissary_connection.send_message(message=memory_message)
     vuln_array = np.zeros((len(vuln_dict), num_damage_bins, num_intensity_bins), dtype=oasis_float)
     cur_vulnerability_id = -1
 
-    memory_message = "after vuln_array " + str(process.memory_info().rss) + " " + str(
-        process.memory_info().shared)
-    emissary_connection.send_message(message=memory_message)
     for vuln_i in range(vulns_bin.shape[0]):
         vuln = vulns_bin[vuln_i]
         if vuln['vulnerability_id'] != cur_vulnerability_id:
@@ -243,13 +232,10 @@ def load_vulns_bin(vulns_bin, vuln_dict, num_damage_bins, num_intensity_bins):
         if cur_vulnerability_id != -1:
             cur_vuln_array[vuln['damage_bin_id'] - 1, vuln['intensity_bin_id'] - 1] = vuln['probability']
 
-    memory_message = "after loop " + str(process.memory_info().rss) + " " + str(
-        process.memory_info().shared)
-    emissary_connection.send_message(message=memory_message)
     return vuln_array
 
 
-@nb.jit()
+# @nb.jit()
 def update_vulns_dictionary(vuln_dict, vulns_id_array):
     """
     Updates the indexes of the vulnerability IDs (usually used in loading vulnerability data from parquet file).
@@ -263,7 +249,7 @@ def update_vulns_dictionary(vuln_dict, vulns_id_array):
         vuln_dict[vulns_id_array[i]] = np.int32(i)
 
 
-@nb.njit()
+# @nb.njit()
 def create_vulns_id(vuln_dict):
     """
     Creates a vulnerability array where the index of the array correlates with the index of the vulnerability.
@@ -392,7 +378,7 @@ def get_mean_damage_bins(static_path, ignore_file_type=set()):
         raise FileNotFoundError(f'damage_bin_dict file not found at {static_path}')
 
 
-@nb.jit(cache=True, fastmath=True)
+# @nb.jit(cache=True, fastmath=True)
 def damage_bin_prob(p, intensities_min, intensities_max, vulns, intensities):
     """
     Calculate the probability of an event happening and then causing damage.
@@ -413,7 +399,7 @@ def damage_bin_prob(p, intensities_min, intensities_max, vulns, intensities):
     return p
 
 
-@nb.jit(cache=True, fastmath=True)
+# @nb.jit(cache=True, fastmath=True)
 def do_result(vulns_id, vuln_array, mean_damage_bins,
               int32_mv, num_damage_bins,
               intensities_min, intensities_max, intensities,
@@ -462,7 +448,7 @@ def do_result(vulns_id, vuln_array, mean_damage_bins,
     return cursor + (result_cursor * oasis_float_relative_size)
 
 
-@nb.njit()
+# @nb.njit()
 def doCdf(event_id,
           num_intensity_bins, footprint,
           areaperil_to_vulns_idx_dict, areaperil_to_vulns_idx_array, areaperil_to_vulns,
@@ -549,7 +535,7 @@ def doCdf(event_id,
     yield cursor * oasis_int_size
 
 
-@nb.njit()
+# @nb.njit()
 def convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns):
     for i in range(areaperil_to_vulns.shape[0]):
         areaperil_to_vulns[i] = vuln_dict[areaperil_to_vulns[i]]
@@ -593,29 +579,29 @@ def run(run_dir, file_in, file_out, ignore_file_type):
 
         logger.debug('init items')
 
-        # memory_message = "init items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        # emissary_connection.send_message(message=memory_message)
+        memory_message = "init items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
 
         vuln_dict, areaperil_to_vulns_idx_dict, areaperil_to_vulns_idx_array, areaperil_to_vulns = get_items(input_path, ignore_file_type)
 
-        # memory_message = "after get_items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        # emissary_connection.send_message(message=memory_message)
+        memory_message = "after get_items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         logger.debug('init footprint')
-        # memory_message = "init footprint " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        # emissary_connection.send_message(message=memory_message)
+        memory_message = "init footprint " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
 
         footprint_obj = stack.enter_context(Footprint.load(static_path, ignore_file_type))
         num_intensity_bins = footprint_obj.num_intensity_bins
 
         logger.debug('init vulnerability')
 
-        # memory_message = "init vulnerability " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        # emissary_connection.send_message(message=memory_message)
+        memory_message = "init vulnerability " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
 
         vuln_array, vulns_id, num_damage_bins = get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type)
 
-        # memory_message = "after get_vulns " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        # emissary_connection.send_message(message=memory_message)
+        memory_message = "after get_vulns " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
 
         convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns)
         logger.debug('init mean_damage_bins')
