@@ -550,15 +550,15 @@ def run(run_dir, file_in, file_out, ignore_file_type):
 
         logger.debug('init items')
 
-        memory_message = "init items " + str(process.memory_info().data) + " " + str(process.memory_info().shared)
+        memory_message = "init items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
 
         vuln_dict, areaperil_to_vulns_idx_dict, areaperil_to_vulns_idx_array, areaperil_to_vulns = get_items(input_path, ignore_file_type)
 
-        memory_message = "after get_items " + str(process.memory_info().data) + " " + str(process.memory_info().shared)
+        memory_message = "after get_items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
         logger.debug('init footprint')
-        memory_message = "init footprint " + str(process.memory_info().data) + " " + str(process.memory_info().shared)
+        memory_message = "init footprint " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
 
         footprint_obj = stack.enter_context(Footprint.load(static_path, ignore_file_type))
@@ -566,17 +566,17 @@ def run(run_dir, file_in, file_out, ignore_file_type):
 
         logger.debug('init vulnerability')
 
-        memory_message = "init vulnerability " + str(process.memory_info().data) + " " + str(process.memory_info().shared)
+        memory_message = "init vulnerability " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
 
         vuln_array, vulns_id, num_damage_bins = get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type)
 
-        memory_message = "after get_vulns " + str(process.memory_info().data) + " " + str(process.memory_info().shared)
+        memory_message = "after get_vulns " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
 
         convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns)
         logger.debug('init mean_damage_bins')
-        memory_message = "init mean_damage_bins " + str(process.memory_info().data) + " " + str(
+        memory_message = "init mean_damage_bins " + str(process.memory_info().rss) + " " + str(
             process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
         mean_damage_bins = get_mean_damage_bins(static_path, ignore_file_type)
@@ -592,7 +592,7 @@ def run(run_dir, file_in, file_out, ignore_file_type):
         stream_out.write(np.uint32(1).tobytes())
 
         logger.debug('doCdf staring')
-        memory_message = "doCdf staring " + str(process.memory_info().data) + " " + str(
+        memory_message = "doCdf staring " + str(process.memory_info().rss) + " " + str(
             process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
         while True:
@@ -612,7 +612,7 @@ def run(run_dir, file_in, file_out, ignore_file_type):
                     else:
                         break
         logger.debug('doCdf done')
-        memory_message = "doCdf done " + str(process.memory_info().data) + " " + str(
+        memory_message = "doCdf done " + str(process.memory_info().rss) + " " + str(
             process.memory_info().shared)
         emissary_connection.send_message(message=memory_message)
 
