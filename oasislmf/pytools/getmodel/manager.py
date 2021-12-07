@@ -16,7 +16,6 @@ from numba.typed import Dict
 
 from .common import areaperil_int, oasis_float, Index_type
 from .footprint import Footprint
-from memory_profiler import profile
 
 logger = logging.getLogger(__name__)
 
@@ -268,7 +267,6 @@ def create_vulns_id(vuln_dict):
     return vulns_id
 
 
-@profile
 def get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type=set()):
     """
     Loads the vulnerabilities from the file.
@@ -281,37 +279,87 @@ def get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type=set()
 
     Returns: (Tuple[List[List[float]], int, np.array[int]) vulnerability data, vulnerabilities id, number of damage bins
     """
+    from screw_driver import EmissaryConnection
+    import psutil
+
     input_files = set(os.listdir(static_path))
+    process = psutil.Process(os.getpid())
+    emissary_connection = EmissaryConnection(key="get-model")
+
     if "vulnerability_dataset" in input_files and "parquet" not in ignore_file_type:
+        memory_message = "before parquet read " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         logger.debug(f"loading {os.path.join(static_path, 'vulnerability_dataset')}")
         parquet_handle = pq.ParquetDataset(os.path.join(static_path, "vulnerability_dataset"), use_legacy_dataset=False,
                                            filters=[("vulnerability_id", "in", list(vuln_dict))],
                                            memory_map=True)
+        memory_message = "after parquet handle " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         vuln_table = parquet_handle.read()
+        memory_message = "after parquet read " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         vuln_meta = vuln_table.schema.metadata
+        memory_message = "after parquet meta data " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         num_damage_bins = int(vuln_meta[b"num_damage_bins"].decode("utf-8"))
+        memory_message = "after parquet damage bins " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         number_of_intensity_bins = int(vuln_meta[b"num_intensity_bins"].decode("utf-8"))
+        memory_message = "after parquet intentisty bins " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         vuln_array = np.vstack(vuln_table['vuln_array'].to_numpy()).reshape(vuln_table['vuln_array'].length(),
                                                                             num_damage_bins,
                                                                             number_of_intensity_bins)
+        memory_message = "after parquet vstack " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         vulns_id = vuln_table['vulnerability_id'].to_numpy()
+        memory_message = "after parquet vulnerability ID " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
         update_vulns_dictionary(vuln_dict, vulns_id)
+        memory_message = "after parquet update dict " + str(process.memory_info().rss) + " " + str(
+            process.memory_info().shared)
+        emissary_connection.send_message(message=memory_message)
 
     else:
         if "vulnerability.bin" in input_files and 'bin' not in ignore_file_type:
             logger.debug(f"loading {os.path.join(static_path, 'vulnerability.bin')}")
             with open(os.path.join(static_path, "vulnerability.bin"), 'rb') as f:
                 header = np.frombuffer(f.read(8), 'i4')
+                memory_message = "after bin read " + str(process.memory_info().rss) + " " + str(
+                    process.memory_info().shared)
+                emissary_connection.send_message(message=memory_message)
                 num_damage_bins = header[0]
             if "vulnerability.idx" in static_path:
                 logger.debug(f"loading {os.path.join(static_path, 'vulnerability.idx')}")
                 vulns_bin = np.memmap(os.path.join(static_path, "vulnerability.bin"), dtype=VulnerabilityRow, offset=4, mode='r')
+                memory_message = "after bin read " + str(process.memory_info().rss) + " " + str(
+                    process.memory_info().shared)
+                emissary_connection.send_message(message=memory_message)
                 vulns_idx_bin = np.memmap(os.path.join(static_path, "vulnerability.idx"), dtype=VulnerabilityIndex, mode='r')
+                memory_message = "after bin idx read " + str(process.memory_info().rss) + " " + str(
+                    process.memory_info().shared)
+                emissary_connection.send_message(message=memory_message)
                 vuln_array = load_vulns_bin_idx(vulns_bin, vulns_idx_bin, vuln_dict,
                                                           num_damage_bins, num_intensity_bins)
+                memory_message = "after load_vulns_bin_idx " + str(process.memory_info().rss) + " " + str(
+                    process.memory_info().shared)
+                emissary_connection.send_message(message=memory_message)
             else:
                 vulns_bin = np.memmap(os.path.join(static_path, "vulnerability.bin"), dtype=Vulnerability, offset=4, mode='r')
+                memory_message = "after bin full read " + str(process.memory_info().rss) + " " + str(
+                    process.memory_info().shared)
+                emissary_connection.send_message(message=memory_message)
                 vuln_array = load_vulns_bin(vulns_bin, vuln_dict, num_damage_bins, num_intensity_bins)
+                memory_message = "after load_vulns_bin " + str(process.memory_info().rss) + " " + str(
+                    process.memory_info().shared)
+                emissary_connection.send_message(message=memory_message)
 
         elif "vulnerability.csv" in input_files and "csv" not in ignore_file_type:
             logger.debug(f"loading {os.path.join(static_path, 'vulnerability.csv')}")
@@ -511,7 +559,6 @@ def convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns):
         areaperil_to_vulns[i] = vuln_dict[areaperil_to_vulns[i]]
 
 
-@profile
 def run(run_dir, file_in, file_out, ignore_file_type):
     """
     Runs the main process of the getmodel process.
@@ -550,29 +597,29 @@ def run(run_dir, file_in, file_out, ignore_file_type):
 
         logger.debug('init items')
 
-        memory_message = "init items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        emissary_connection.send_message(message=memory_message)
+        # memory_message = "init items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        # emissary_connection.send_message(message=memory_message)
 
         vuln_dict, areaperil_to_vulns_idx_dict, areaperil_to_vulns_idx_array, areaperil_to_vulns = get_items(input_path, ignore_file_type)
 
-        memory_message = "after get_items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        emissary_connection.send_message(message=memory_message)
+        # memory_message = "after get_items " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        # emissary_connection.send_message(message=memory_message)
         logger.debug('init footprint')
-        memory_message = "init footprint " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        emissary_connection.send_message(message=memory_message)
+        # memory_message = "init footprint " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        # emissary_connection.send_message(message=memory_message)
 
         footprint_obj = stack.enter_context(Footprint.load(static_path, ignore_file_type))
         num_intensity_bins = footprint_obj.num_intensity_bins
 
         logger.debug('init vulnerability')
 
-        memory_message = "init vulnerability " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        emissary_connection.send_message(message=memory_message)
+        # memory_message = "init vulnerability " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        # emissary_connection.send_message(message=memory_message)
 
         vuln_array, vulns_id, num_damage_bins = get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type)
 
-        memory_message = "after get_vulns " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
-        emissary_connection.send_message(message=memory_message)
+        # memory_message = "after get_vulns " + str(process.memory_info().rss) + " " + str(process.memory_info().shared)
+        # emissary_connection.send_message(message=memory_message)
 
         convert_vuln_id_to_index(vuln_dict, areaperil_to_vulns)
         logger.debug('init mean_damage_bins')
