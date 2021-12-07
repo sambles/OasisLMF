@@ -205,7 +205,7 @@ def load_vulns_bin_idx(vulns_bin, vulns_idx_bin, vuln_dict,
     return vuln_array
 
 
-@nb.njit(cache=True)
+# @nb.njit(cache=True)
 def load_vulns_bin(vulns_bin, vuln_dict, num_damage_bins, num_intensity_bins):
     """
     Loads the vulnerability data grouped by the intensity and damage bins.
@@ -218,9 +218,20 @@ def load_vulns_bin(vulns_bin, vuln_dict, num_damage_bins, num_intensity_bins):
 
     Returns: (List[List[List[floats]]]) vulnerability data grouped by intensity bin and damage bin
     """
+    from screw_driver import EmissaryConnection
+    import psutil
+
+    process = psutil.Process(os.getpid())
+    emissary_connection = EmissaryConnection(key="get-model")
+    memory_message = "before vuln_array " + str(process.memory_info().rss) + " " + str(
+        process.memory_info().shared)
+    emissary_connection.send_message(message=memory_message)
     vuln_array = np.zeros((len(vuln_dict), num_damage_bins, num_intensity_bins), dtype=oasis_float)
     cur_vulnerability_id = -1
 
+    memory_message = "after vuln_array " + str(process.memory_info().rss) + " " + str(
+        process.memory_info().shared)
+    emissary_connection.send_message(message=memory_message)
     for vuln_i in range(vulns_bin.shape[0]):
         vuln = vulns_bin[vuln_i]
         if vuln['vulnerability_id'] != cur_vulnerability_id:
@@ -232,6 +243,9 @@ def load_vulns_bin(vulns_bin, vuln_dict, num_damage_bins, num_intensity_bins):
         if cur_vulnerability_id != -1:
             cur_vuln_array[vuln['damage_bin_id'] - 1, vuln['intensity_bin_id'] - 1] = vuln['probability']
 
+    memory_message = "after loop " + str(process.memory_info().rss) + " " + str(
+        process.memory_info().shared)
+    emissary_connection.send_message(message=memory_message)
     return vuln_array
 
 
@@ -332,34 +346,16 @@ def get_vulns(static_path, vuln_dict, num_intensity_bins, ignore_file_type=set()
             logger.debug(f"loading {os.path.join(static_path, 'vulnerability.bin')}")
             with open(os.path.join(static_path, "vulnerability.bin"), 'rb') as f:
                 header = np.frombuffer(f.read(8), 'i4')
-                memory_message = "after bin read " + str(process.memory_info().rss) + " " + str(
-                    process.memory_info().shared)
-                emissary_connection.send_message(message=memory_message)
                 num_damage_bins = header[0]
             if "vulnerability.idx" in static_path:
                 logger.debug(f"loading {os.path.join(static_path, 'vulnerability.idx')}")
                 vulns_bin = np.memmap(os.path.join(static_path, "vulnerability.bin"), dtype=VulnerabilityRow, offset=4, mode='r')
-                memory_message = "after bin read " + str(process.memory_info().rss) + " " + str(
-                    process.memory_info().shared)
-                emissary_connection.send_message(message=memory_message)
                 vulns_idx_bin = np.memmap(os.path.join(static_path, "vulnerability.idx"), dtype=VulnerabilityIndex, mode='r')
-                memory_message = "after bin idx read " + str(process.memory_info().rss) + " " + str(
-                    process.memory_info().shared)
-                emissary_connection.send_message(message=memory_message)
                 vuln_array = load_vulns_bin_idx(vulns_bin, vulns_idx_bin, vuln_dict,
                                                           num_damage_bins, num_intensity_bins)
-                memory_message = "after load_vulns_bin_idx " + str(process.memory_info().rss) + " " + str(
-                    process.memory_info().shared)
-                emissary_connection.send_message(message=memory_message)
             else:
                 vulns_bin = np.memmap(os.path.join(static_path, "vulnerability.bin"), dtype=Vulnerability, offset=4, mode='r')
-                memory_message = "after bin full read " + str(process.memory_info().rss) + " " + str(
-                    process.memory_info().shared)
-                emissary_connection.send_message(message=memory_message)
                 vuln_array = load_vulns_bin(vulns_bin, vuln_dict, num_damage_bins, num_intensity_bins)
-                memory_message = "after load_vulns_bin " + str(process.memory_info().rss) + " " + str(
-                    process.memory_info().shared)
-                emissary_connection.send_message(message=memory_message)
 
         elif "vulnerability.csv" in input_files and "csv" not in ignore_file_type:
             logger.debug(f"loading {os.path.join(static_path, 'vulnerability.csv')}")
