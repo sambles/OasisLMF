@@ -12,6 +12,7 @@ from zlib import decompress
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
+import numba as nb
 
 from .common import (FootprintHeader, EventIndexBin, EventIndexBinZ, Event, EventCSV,
                      footprint_filename, footprint_index_filename, zfootprint_filename, zfootprint_index_filename,
@@ -313,7 +314,7 @@ class FootprintParquet(Footprint):
 
 
 # currently not for numba due to numba not supporting advanced indexing and slicing
-# @nb.jit
+@nb.jit
 def stitch_data(areaperil_id, intensity_bin_id, probability, buffer):
     """
     Creates a list of tuples from three np.arrays.
@@ -327,5 +328,8 @@ def stitch_data(areaperil_id, intensity_bin_id, probability, buffer):
     Returns:
     """
     for x in range(0, len(buffer)):
-        buffer[x] = (areaperil_id[x], intensity_bin_id[x], probability[x])
+        buffer[x]['areaperil_id'] = areaperil_id[x]
+        buffer[x]['intensity_bin_id'] = intensity_bin_id[x]
+        buffer[x]['probability'] = probability[x]
+        # buffer[x] = (areaperil_id[x], intensity_bin_id[x], probability[x])
     return buffer
