@@ -308,13 +308,12 @@ class FootprintParquet(Footprint):
         intensity_bin_id = data_frame["intensity_bin_id"].to_numpy()
         probability = data_frame["probability"].to_numpy()
 
-        buffer = np.empty(len(areaperil_id), dtype=Event)
+        buffer = np.empty(areaperil_id.shape[0], dtype=Event)
         outcome = stitch_data(areaperil_id, intensity_bin_id, probability, buffer)
         return np.array(outcome, dtype=Event)
 
 
-# currently not for numba due to numba not supporting advanced indexing and slicing
-@nb.jit
+@nb.jit(cache=True)
 def stitch_data(areaperil_id, intensity_bin_id, probability, buffer):
     """
     Creates a list of tuples from three np.arrays.
