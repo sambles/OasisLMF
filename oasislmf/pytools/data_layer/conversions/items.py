@@ -23,6 +23,7 @@ class IdMap(dict, metaclass=Singleton):
         super().__init__({})
 
 
+# this function is currently not being used at all
 def process_hashed_item(item_data: "np.array[Item]", total_len: int) -> "np.array[Item]":
     """
     Hash the group IDs of the items data.
@@ -43,6 +44,7 @@ def process_hashed_item(item_data: "np.array[Item]", total_len: int) -> "np.arra
     return buffer
 
 
+# this function is currently not being used at all
 def convert_item_file_ids_to_hash(input_directory: str) -> None:
     """
     Hashes the group ID in the items.bin file writing the result to that file.
@@ -61,6 +63,7 @@ def convert_item_file_ids_to_hash(input_directory: str) -> None:
     _write_hashed_id_map(input_directory=input_directory)
 
 
+# This function is currently not being used at all
 def convert_item_csv_to_hash(input_directory: str) -> None:
     """
     Rewrites the item CSV file to the same CSV file with hashed group IDs.
