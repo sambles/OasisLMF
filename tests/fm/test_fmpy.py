@@ -8,6 +8,7 @@ from oasislmf.manager import OasisManager
 from unittest import TestCase
 
 import pytest
+# force a build
 
 class FmAcceptanceTests(TestCase):
 
@@ -41,13 +42,13 @@ class FmAcceptanceTests(TestCase):
         self.assertTrue(result)
 
     # superceded by insurance_and_step
-    # def test_insurance(self):
-    #     self.run_test('insurance',fmpy=True)
+    def test_insurance(self):
+        self.run_test('insurance',fmpy=True)
 
     def test_insurance_conditions(self):
         self.run_test('insurance_conditions', fmpy=True)
 
-    # superceded by insurance_and_step    
+    # superceded by insurance_and_step
     # def test_insurance_step(self):
     #     self.run_test('insurance_step',fmpy=True)
 

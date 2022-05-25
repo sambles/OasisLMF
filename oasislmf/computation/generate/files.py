@@ -8,6 +8,7 @@ import io
 import json
 import os
 from pathlib import Path
+from typing import List, Dict, Union
 
 from .keys import GenerateKeys, GenerateKeysDeterministic
 from ..base import ComputationStep
@@ -76,12 +77,12 @@ from ..data.dummy_model.generate import (
 
 class GenerateFiles(ComputationStep):
     """
-    Generates the standard Oasis GUL input files + optionally the IL/FM input
-    files and the RI input files.
+    Generates the standard Oasis GUL input oasis_files + optionally the IL/FM input
+    oasis_files and the RI input oasis_files.
     """
     step_params = [
         # Command line options
-        {'name': 'oasis_files_dir',            'flag':'-o', 'is_path': True, 'pre_exist': False, 'help': 'Path to the directory in which to generate the Oasis files'},
+        {'name': 'oasis_files_dir',            'flag':'-o', 'is_path': True, 'pre_exist': False, 'help': 'Path to the directory in which to generate the Oasis oasis_files'},
         {'name': 'keys_data_csv',              'flag':'-z', 'is_path': True, 'pre_exist': True,  'help': 'Pre-generated keys CSV file path'},
         {'name': 'keys_errors_csv',                         'is_path': True, 'pre_exist': True,  'help': 'Pre-generated keys errors CSV file path'},
         {'name': 'lookup_config_json',         'flag':'-m', 'is_path': True, 'pre_exist': False, 'help': 'Lookup config JSON file path'},
@@ -92,7 +93,7 @@ class GenerateFiles(ComputationStep):
         {'name': 'lookup_num_chunks',          'type':int,  'default': -1,                       'help': 'Number of chunks to split the location file into for multiprocessing'},
         {'name': 'model_version_csv',          'flag':'-v', 'is_path': True, 'pre_exist': False, 'help': 'Model version CSV file path'},
         {'name': 'model_settings_json',        'flag':'-M', 'is_path': True, 'pre_exist': True,  'help': 'Model settings JSON file path'},
-        {'name': 'user_data_dir',              'flag':'-D', 'is_path': True, 'pre_exist': False, 'help': 'Directory containing additional model data files which varies between analysis runs'},
+        {'name': 'user_data_dir',              'flag':'-D', 'is_path': True, 'pre_exist': False, 'help': 'Directory containing additional model data oasis_files which varies between analysis runs'},
         {'name': 'profile_loc_json',           'flag':'-e', 'is_path': True, 'pre_exist': True,  'help': 'Source (OED) exposure profile JSON path'},
         {'name': 'profile_acc_json',           'flag':'-b', 'is_path': True, 'pre_exist': True,  'help': 'Source (OED) accounts profile JSON path'},
         {'name': 'profile_fm_agg_json',        'flag':'-g', 'is_path': True, 'pre_exist': True,  'help': 'FM (OED) aggregation profile path'},
@@ -104,6 +105,7 @@ class GenerateFiles(ComputationStep):
         {'name': 'group_id_cols',              'flag':'-G', 'nargs':'+',                         'help': 'Columns from loc file to set group_id', 'default': GROUP_ID_COLS},
         {'name': 'lookup_multiprocessing',     'type': str2bool, 'const': False, 'nargs':'?',  'default': False, 'help': 'Flag to enable/disable lookup multiprocessing'},
         {"name": "hashed_group_id",            "type": str2bool, "const": False, 'nargs':'?',  "default": False, "help": "Hashes the group_id in the items.bin"},
+        {"name": "peril_correlation_group",    'nargs':'?'},
 
         # Manager only options (pass data directy instead of filepaths)
         {'name': 'lookup_config'},
@@ -121,7 +123,18 @@ class GenerateFiles(ComputationStep):
         if self.oasis_files_dir:
             return self.oasis_files_dir
         utcnow = get_utctimestamp(fmt='%Y%m%d%H%M%S')
-        return os.path.join(os.getcwd(), 'runs', 'files-{}'.format(utcnow))
+        return os.path.join(os.getcwd(), 'runs', 'oasis_files-{}'.format(utcnow))
+
+    def _prepare_correlations(self) -> None:
+        if self.peril_correlation_group is None:
+            self.peril_correlation_group = self.group_id_cols
+
+        with open(self.model_settings_json, "r") as file:
+            data = json.loads(file.read())
+
+        self.lookup_settings: List[Dict[str, Union[str, int]]] = data.get("lookup_settings", [])
+        self.correlation_settings: List[Dict[str, Union[int, float]]] = data.get("correlation_settings", [])
+
 
     def run(self):
         self.logger.info('\nProcessing arguments - Creating Oasis Files')
@@ -136,12 +149,14 @@ class GenerateFiles(ComputationStep):
                 'version file path + lookup package path must be provided'
             )
 
+        self._prepare_correlations()
+
         il = True if self.oed_accounts_csv else False
         ri = all([self.oed_info_csv, self.oed_scope_csv]) and il
-        self.logger.info('\nGenerating Oasis files (GUL=True, IL={}, RIL={})'.format(il, ri))
+        self.logger.info('\nGenerating Oasis oasis_files (GUL=True, IL={}, RIL={})'.format(il, ri))
         summarise_exposure = not self.disable_summarise_exposure
 
-        # Prepare the target directory and copy the source files, profiles and
+        # Prepare the target directory and copy the source oasis_files, profiles and
         # model version into it
         target_dir = prepare_input_files_directory(
             self._get_output_dir(),
@@ -158,8 +173,8 @@ class GenerateFiles(ComputationStep):
             ri_info_fp=self.oed_info_csv,
             ri_scope_fp=self.oed_scope_csv
         )
-        # Get the profiles defining the exposure and accounts files, ID related
-        # terms in these files, and FM aggregation hierarchy
+        # Get the profiles defining the exposure and accounts oasis_files, ID related
+        # terms in these oasis_files, and FM aggregation hierarchy
         location_profile = get_json(src_fp=self.profile_loc_json) if self.profile_loc_json else self.profile_loc
         accounts_profile = get_json(src_fp=self.profile_acc_json) if self.profile_acc_json else self.profile_acc
         oed_hierarchy = get_oed_hierarchy(location_profile, accounts_profile)
@@ -170,7 +185,7 @@ class GenerateFiles(ComputationStep):
             self.profile_fm_agg
         )
 
-        # Load Location file at a single point in the Generate files cmd
+        # Load Location file at a single point in the Generate oasis_files cmd
         location_df = get_location_df(self.oed_location_csv, location_profile)
 
         # If a pre-generated keys file path has not been provided,
@@ -247,7 +262,7 @@ class GenerateFiles(ComputationStep):
         if summarise_exposure:
             write_summary_levels(location_df, self.oed_location_csv, target_dir)
 
-        # Write the GUL input files
+        # Write the GUL input oasis_files
         files_prefixes = self.oasis_files_prefixes
         gul_input_files = write_gul_input_files(
             gul_inputs_df,
@@ -261,10 +276,10 @@ class GenerateFiles(ComputationStep):
         write_mapping_file(gul_summary_mapping, target_dir)
 
         # If no source accounts file path has been provided assume that IL
-        # input files, and therefore also RI input files, are not needed
+        # input oasis_files, and therefore also RI input oasis_files, are not needed
         if not il:
             # Write `summary_map.csv` for GUL only
-            self.logger.info('\nOasis files generated: {}'.format(json.dumps(gul_input_files, indent=4)))
+            self.logger.info('\nOasis oasis_files generated: {}'.format(json.dumps(gul_input_files, indent=4)))
             return gul_input_files
 
         account_df = get_account_df(self.oed_accounts_csv, accounts_profile)
@@ -279,7 +294,7 @@ class GenerateFiles(ComputationStep):
             fm_aggregation_profile=fm_aggregation_profile
         )
 
-        # Write the IL/FM input files
+        # Write the IL/FM input oasis_files
         il_input_files = write_il_input_files(
             il_inputs_df,
             target_dir,
@@ -294,12 +309,12 @@ class GenerateFiles(ComputationStep):
         oasis_files = {**gul_input_files, **il_input_files}
 
         # If no RI input file paths (info. and scope) have been provided then
-        # no RI input files are needed, just return the GUL and IL Oasis files
+        # no RI input oasis_files are needed, just return the GUL and IL Oasis oasis_files
         if not ri:
-            self.logger.info('\nOasis files generated: {}'.format(json.dumps(oasis_files, indent=4)))
+            self.logger.info('\nOasis oasis_files generated: {}'.format(json.dumps(oasis_files, indent=4)))
             return oasis_files
 
-        # Write the RI input files, and write the returned RI layer info. as a
+        # Write the RI input oasis_files, and write the returned RI layer info. as a
         # file, which can be reused by the model runner (in the model execution
         # stage) to set the number of RI iterations
         xref_descriptions_df = merge_oed_to_mapping(
@@ -326,14 +341,14 @@ class GenerateFiles(ComputationStep):
             for layer, layer_info in ri_layers.items():
                 oasis_files['RI_{}'.format(layer)] = layer_info['directory']
 
-        self.logger.info('\nOasis files generated: {}'.format(json.dumps(oasis_files, indent=4)))
+        self.logger.info('\nOasis oasis_files generated: {}'.format(json.dumps(oasis_files, indent=4)))
 
         return oasis_files
 
 
 class GenerateDummyModelFiles(ComputationStep):
     """
-    Generates dummy model files.
+    Generates dummy model oasis_files.
     """
 
     # Command line options
@@ -370,7 +385,7 @@ class GenerateDummyModelFiles(ComputationStep):
         utcnow = get_utctimestamp(fmt='%Y%m%d%H%M%S')
         target_dir =  os.path.join(os.getcwd(), 'runs', f'test-{label}-{utcnow}')
         self.target_dir = create_target_directory(
-            target_dir, 'target test model files directory'
+            target_dir, 'target test model oasis_files directory'
         )
 
     def _prepare_run_directory(self):
@@ -433,7 +448,7 @@ class GenerateDummyModelFiles(ComputationStep):
         self.logger.info('\nProcessing arguments - Creating Dummy Model Files')
 
         self._validate_input_arguments()
-        self._create_target_directory(label='files')
+        self._create_target_directory(label='oasis_files')
         self._prepare_run_directory()
         self._get_model_file_objects()
 
@@ -441,13 +456,13 @@ class GenerateDummyModelFiles(ComputationStep):
             self.logger.info(f'Writing {model_file.file_name}')
             model_file.write_file()
 
-        self.logger.info(f'\nDummy Model files generated in {self.target_dir}')
+        self.logger.info(f'\nDummy Model oasis_files generated in {self.target_dir}')
 
 
 class GenerateDummyOasisFiles(GenerateDummyModelFiles):
     """
-    Generates dummy model and Oasis GUL input files + optionally the IL/FM
-    input files.
+    Generates dummy model and Oasis GUL input oasis_files + optionally the IL/FM
+    input oasis_files.
     """
 
     step_params = [
@@ -507,12 +522,12 @@ class GenerateDummyOasisFiles(GenerateDummyModelFiles):
         self.logger.info('\nProcessing arguments - Creating Model & Test Oasis Files')
 
         self._validate_input_arguments()
-        self._create_target_directory(label='files')
+        self._create_target_directory(label='oasis_files')
         self._prepare_run_directory()
         self._get_model_file_objects()
         self._get_gul_file_objects()
 
-        il = True   # Assume that FM files should be generated too
+        il = True   # Assume that FM oasis_files should be generated too
         if il is True:
             self._get_fm_file_objects()
         else:
@@ -523,4 +538,4 @@ class GenerateDummyOasisFiles(GenerateDummyModelFiles):
             self.logger.info(f'Writing {output_file.file_name}')
             output_file.write_file()
 
-        self.logger.info(f'\nDummy Model and Oasis files generated in {self.target_dir}')
+        self.logger.info(f'\nDummy Model and Oasis oasis_files generated in {self.target_dir}')

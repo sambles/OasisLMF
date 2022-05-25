@@ -27,7 +27,7 @@ class RunModel(ComputationStep):
 
     # Override params
     step_params = [
-        {'name': 'oasis_files_dir', 'flag': '-o', 'is_path': True, 'pre_exist': False, 'help': 'Path to the directory in which to generate the Oasis files'},
+        {'name': 'oasis_files_dir', 'flag': '-o', 'is_path': True, 'pre_exist': False, 'help': 'Path to the directory in which to generate the Oasis oasis_files'},
         {'name': 'exposure_pre_analysis_module', 'required': False, 'is_path': True, 'pre_exist': True, 'help': 'Exposure Pre-Analysis lookup module path'},
     ]
     # Add params from each sub command not in 'step_params'
@@ -63,10 +63,11 @@ class RunModel(ComputationStep):
         self.kwargs['model_run_dir'] = self.model_run_dir
         self.kwargs['oasis_files_dir'] = os.path.join(self.model_run_dir, 'input')
 
-        # Validate JSON files (Fail at entry point not after input generation)
+        # Validate JSON oasis_files (Fail at entry point not after input generation)
         get_analysis_settings(self.analysis_settings_json)
         if self.model_settings_json:
             get_model_settings(self.model_settings_json)
+
 
         # Check input expsoure
         required_ri_paths = [self.oed_info_csv, self.oed_scope_csv]
@@ -76,7 +77,7 @@ class RunModel(ComputationStep):
             raise OasisException(
                 'RI option indicated by provision of some RI related assets, but other assets are missing. '
                 'To generate RI inputs you need to provide all of the assets required to generate direct '
-                'Oasis files (GUL + FM input files) plus all of the following assets: '
+                'Oasis oasis_files (GUL + FM input oasis_files) plus all of the following assets: '
                 '    reinsurance info. file path, '
                 '    reinsurance scope file path.'
             )
